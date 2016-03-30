@@ -42,7 +42,7 @@ from .domain_classes import (Texture,
                              G3DModel)
 from io_scene_g3d.util import FLOAT_ROUND
 
-IOG3DOrientationHelper = orientation_helper_factory("IOG3DOrientationHelper", axis_forward='-Z', axis_up='Y')
+IOG3DOrientationHelper = orientation_helper_factory("IOG3DOrientationHelper", axis_forward='Y', axis_up='Z')
 
 
 class G3DBaseExporterOperator(ExportHelper, IOG3DOrientationHelper):
@@ -55,6 +55,12 @@ class G3DBaseExporterOperator(ExportHelper, IOG3DOrientationHelper):
         name="Selection Only",
         description="Export only selected objects",
         default=False
+    )
+
+    useRelativePath = BoolProperty(
+        name="Use relative paths",
+        description="Use only the filename of the textures in the output file.",
+        default=True
     )
     
     applyModifiers = BoolProperty(
@@ -96,6 +102,7 @@ class G3DBaseExporterOperator(ExportHelper, IOG3DOrientationHelper):
         "filepath",
         "check_existing",
         "useSelection",
+        "useRelativePath",
         "applyModifiers",
         "exportArmature",
         "bonesPerVertex",
@@ -495,7 +502,13 @@ class G3DBaseExporterOperator(ExportHelper, IOG3DOrientationHelper):
                             continue
 
                         currentTexture.id = slot.name
-                        currentTexture.filename = (self.getCompatiblePath(slot.texture.image.filepath))
+
+                        if self.useRelativePath:
+                            print("Using relative paths...")
+                            currentTexture.filename = (self.getRelativePath(slot.texture.image.filepath))
+                        else:
+                            print("Using full paths...")
+                            currentTexture.filename = (self.getCompatiblePath(slot.texture.image.filepath))
 
                         usageType = ""
 
@@ -884,6 +897,9 @@ class G3DBaseExporterOperator(ExportHelper, IOG3DOrientationHelper):
         return path[2:] if path[:2] in {"//", b"//"} else path
         """
 
+    def getRelativePath(self, path):
+        return bpy.path.basename(self.getCompatiblePath(path))
+
     def meshTriangulate(self, me):
         """
         Creates a triangulated copy of a mesh.
@@ -1252,6 +1268,7 @@ class G3DBExporterOperator(bpy.types.Operator, G3DBaseExporterOperator):
         "filepath",
         "check_existing",
         "useSelection",
+        "useRelativePath",
         "applyModifiers",
         "exportArmature",
         "bonesPerVertex",
